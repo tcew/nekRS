@@ -190,7 +190,11 @@ int main(int argc, char** argv)
   const int elapsedTarget = 10;
   if(Ntests < 0) Ntests = elapsedTarget/elapsed;
 
-  // ***** 
+  // *****
+  // warm up (for pci-e a100 that is slow to start)
+  elapsed = run(1000);
+
+  // actual run
   elapsed = run(Ntests);
   // ***** 
  
