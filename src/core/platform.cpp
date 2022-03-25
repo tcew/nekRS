@@ -129,6 +129,7 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
     kernelInfo["compiler_flags"] += " -ffp-contract=fast ";
     kernelInfo["compiler_flags"] += " -funsafe-math-optimizations ";
     kernelInfo["compiler_flags"] += " -ffast-math ";
+    kernelInfo["compiler_flags"] += " -fno-vectorize "; 
   }
 
   serial = device.mode() == "Serial" ||

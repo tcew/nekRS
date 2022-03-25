@@ -3,9 +3,9 @@ set -e -a
 
 : ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs}
 
-: ${NEKRS_CC:="mpicc"}
-: ${NEKRS_CXX:="mpic++"}
-: ${NEKRS_FC:="mpif77"}
+: ${NEKRS_CC:="cc"}
+: ${NEKRS_CXX:="CC"}
+: ${NEKRS_FC:="ftn"}
 : ${NEKRS_COMPILER_FLAGS:="-O2 -g -march=native -mtune=native -ftree-vectorize"}
 
 : ${NEKRS_GPU_MPI:=1}

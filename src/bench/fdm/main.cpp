@@ -154,12 +154,21 @@ int main(int argc, char** argv)
   // always benchmark ASM
   props["defines/p_restrict"] = 0;
 
+  if(platform->device.mode() == "HIP"){
+    props["compiler_flags"] += " -O3 ";
+    props["compiler_flags"] += " -ffp-contract=fast ";
+    props["compiler_flags"] += " -funsafe-math-optimizations ";
+    props["compiler_flags"] += " -ffast-math ";
+    //props["compiler_flags"] += " -fno-vectorize "; THIS CAN SLOW THINGS DOWN
+  }
+
+  
+  std::cout << props;
+  
   std::string kernelName = "fusedFDM";
   const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
   const std::string fileName = 
     installDir + "/okl/elliptic/" + kernelName + ext;
-
-  fdmKernel = platform->device.buildKernel(fileName, props, true);
 
   // populate arrays
   randAlloc = &rand64Alloc; 
@@ -185,41 +194,49 @@ int main(int argc, char** argv)
   o_u = platform->device.malloc(Nelements * Np * wordSize, u);
   free(u);
 
-  // warm-up
-  double elapsed = run(10);
-  const int elapsedTarget = 10;
-  if(Ntests < 0) Ntests = elapsedTarget/elapsed;
-
-  // *****
-  // warm up (for pci-e a100 that is slow to start)
-  elapsed = run(1000);
-
-  // actual run
-  elapsed = run(Ntests);
-  // ***** 
- 
-  // print statistics
-  const dfloat GDOFPerSecond = (size * Nelements * (N* N * N) / elapsed) / 1.e9;
-
-  size_t bytesPerElem = (3 * Np + 3 * Nq * Nq) * wordSize;
-  const double bw = (size * Nelements * bytesPerElem / elapsed) / 1.e9;
-
-  double flopsPerElem = 12 * Nq * Np + Np;
-  const double gflops = (size * flopsPerElem * Nelements / elapsed) / 1.e9;
-
-  if(rank == 0)
-    std::cout << "MPItasks=" << size
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " N=" << N
-              << " Nelements=" << size * Nelements
-              << " elapsed time=" << elapsed
-              << " wordSize=" << 8*wordSize
-              << " GDOF/s=" << GDOFPerSecond
-              << " GB/s=" << bw
-              << " GFLOPS/s=" << gflops
-              << "\n";
-
+  int minKernel = 0, maxKernel = 12;
+  for(int knl=minKernel;knl<=maxKernel;++knl){
+    occa::properties saveprops = props;    
+    saveprops["defines/p_knl"] = knl;
+    fdmKernel = platform->device.buildKernel(fileName, saveprops, true);
+    
+    // warm-up
+    double elapsed = run(10);
+    const int elapsedTarget = 10;
+    if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+  
+    // *****
+    // warm up (for pci-e a100 that is slow to start)
+    elapsed = run(1000);
+    
+    // actual run
+    elapsed = run(Ntests);
+    // ***** 
+    
+    // print statistics
+    const dfloat GDOFPerSecond = (size * Nelements * (N* N * N) / elapsed) / 1.e9;
+    
+    size_t bytesPerElem = (3 * Np + 3 * Nq * Nq) * wordSize;
+    const double bw = (size * Nelements * bytesPerElem / elapsed) / 1.e9;
+    
+    double flopsPerElem = 12 * Nq * Np + Np;
+    const double gflops = (size * flopsPerElem * Nelements / elapsed) / 1.e9;
+    
+    if(rank == 0)
+      std::cout << "MPItasks=" << size
+		<< " OMPthreads=" << Nthreads
+		<< " NRepetitions=" << Ntests
+		<< " N=" << N
+		<< " Nelements=" << size * Nelements
+		<< " elapsed time=" << elapsed
+		<< " wordSize=" << 8*wordSize
+		<< " GDOF/s=" << GDOFPerSecond
+		<< " GB/s=" << bw
+		<< " GFLOPS/s=" << gflops
+		<< " kernel=" << knl
+		<< "\n";
+  }
+  
   MPI_Finalize();
   exit(0);
 }
