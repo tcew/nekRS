@@ -138,7 +138,7 @@ int main(int argc, char** argv)
   Nelements = std::max(1, Nelements/size);
   const int Nq = N+1 ;
   const int Np = Nq * Nq * Nq;
-  const int Nq_e = N+2;
+  const int Nq_e = N+1;
   const int Np_e = Nq_e*Nq_e*Nq_e;
 
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
   o_u = platform->device.malloc(Nelements * Np_e * wordSize, u);
   free(u);
 
-  int minKernel = 0, maxKernel = 12;
+  int minKernel = 0, maxKernel = 15;
   for(int knl=minKernel;knl<=maxKernel;++knl){
     occa::properties saveprops = props;    
     saveprops["defines/p_knl"] = knl;
