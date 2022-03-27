@@ -156,7 +156,18 @@ int main(int argc, char** argv)
   // always benchmark ASM
   props["defines/p_restrict"] = 0;
 
+  if(platform->device.mode() == "CUDA"){
+    props["compiler_flags"] += " -O3 ";
+    props["compiler_flags"] += " --ftz=true ";
+    props["compiler_flags"] += " --prec-div=false ";
+    props["compiler_flags"] += " --prec-sqrt=false ";
+    props["compiler_flags"] += " --use_fast_math ";
+    props["compiler_flags"] += " --fmad=true ";
+    //props["compiler_flags"] += "-Xptxas -dlcm=ca";
+  }
+  
   if(platform->device.mode() == "HIP"){
+    props["defines/OCCA_USE_HIP"] = 1;
     props["compiler_flags"] += " -O3 ";
     props["compiler_flags"] += " -ffp-contract=fast ";
     props["compiler_flags"] += " -funsafe-math-optimizations ";
