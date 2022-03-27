@@ -196,6 +196,8 @@ int main(int argc, char** argv)
   void *tmp  = randAlloc(Nelements * Np_e);
   void *u0   = randAlloc(Nelements * Np_e);
 
+  float *zero = (float*) calloc(Nelements * Np_e, sizeof(float));
+
   o_Sx = platform->device.malloc(Nelements * Nq_e* Nq_e * wordSize, Sx);
   free(Sx);
   o_Sy = platform->device.malloc(Nelements * Nq_e * Nq_e * wordSize, Sy);
@@ -209,9 +211,8 @@ int main(int argc, char** argv)
   o_u = platform->device.malloc(Nelements * Np_e * wordSize, u);
   //  free(u);
 
-  int minKernel = 0, maxKernel = 15;
+  int minKernel = 0, maxKernel = 10;
   for(int knl=minKernel;knl<=maxKernel;++knl){
-    if(knl<3 || knl>6){
     occa::properties saveprops = props;    
     saveprops["defines/p_knl"] = knl;
     fdmKernel = platform->device.buildKernel(fileName, saveprops, true);
@@ -222,7 +223,8 @@ int main(int argc, char** argv)
     o_Su.copyTo(tmp);
     if(knl==0)
       o_Su.copyTo(u0);
-    o_Su.copyFrom(u);
+    o_Su.copyFrom(zero);
+    
     double checksum = 0;
     for(int n=0;n<Np_e*Nelements;++n){
       checksum += fabs(((float*)tmp)[n]);
@@ -263,9 +265,8 @@ int main(int argc, char** argv)
 		<< " GB/s=" << bw
 		<< " GFLOPS/s=" << gflops
 		<< " kernel=" << knl
-		<< " checksum=" << std::setprecision(12) << checksum
+		<< " checksum=" << std::setprecision(16) << checksum
 		<< "\n";
-    }
   }
   
   MPI_Finalize();
