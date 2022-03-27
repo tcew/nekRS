@@ -4269,7 +4269,8 @@
       }
 
     // TW: we merge the boundary mods into a single write
-    //    @barrier();
+    @barrier();
+    
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for(int j = 0; j < p_Nq_e; ++j; @inner){
 	for(int i = 0; i < p_Nq_e; ++i; @inner){
@@ -4287,7 +4288,8 @@
 	}
       }
 
-    //    @barrier();
+    @barrier();
+    
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -4304,12 +4306,13 @@
 	      values[i] += S_x_e[l][i][es]*tmp;
 	    }
 	  }
+
 	  for (int i = 0; i < p_Nq_e; i++) 
 	    work1[k][j][i][es] = values[i];
 	}
       }
 
-    //@barrier();
+    @barrier();
     
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
@@ -4328,12 +4331,14 @@
 	      values[j] += S_y_e[l][j][es]*tmp;
 	    }
 	  }
+
 	  for (int j = 0; j < p_Nq_e; j++) 
 	    work1[k][j][i][es] = values[j];
 	}
       }
     
-    //    @barrier();
+    @barrier();
+    
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -4363,7 +4368,8 @@
 	}
       }
   
-    //    @barrier();
+    @barrier();
+    
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -4381,12 +4387,14 @@
 	      values[i] += S_x_e[i][l][es]*tmp;
 	    }
 	  }
+
 	  for (int i = 0; i < p_Nq_e; i++) 
 	    work1[k][j][i][es] = values[i];
 	}
       }
 
-    //    @barrier();
+    @barrier();
+    
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -4409,7 +4417,8 @@
 	}
       }
   
-    //    @barrier();
+    @barrier();
+    
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -4453,6 +4462,8 @@
     
     
 #if (!p_restrict)
+    @barrier();
+    
     // merged these three loops into one (however, the premise is shaky at best)
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for(int j = 0; j < p_Nq_e; ++j; @inner){
