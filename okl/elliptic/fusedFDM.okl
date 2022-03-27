@@ -383,7 +383,11 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -397,7 +401,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -413,7 +422,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
           pfloat value = 0.0;
@@ -430,7 +444,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -444,7 +463,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -459,7 +483,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
 	  pfloat value = 0.0;
@@ -634,12 +663,22 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i+=2) {
           pfloat value1 = 0.0;
 	  pfloat value2 = 0.0;
 	  //#pragma unroll p_Nq_e
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
           for (int l = 0; l < p_Nq_e; l++){
 	    pfloat S_x_eT_jl = S_x_eT[j][l];
             value1 += S_x_eT_jl * work1[k][i][l];
@@ -655,12 +694,22 @@
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i+=2) {
           pfloat value1 = 0.0;
 	  pfloat value2 = 0.0;
 	  //#pragma unroll p_Nq_e
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
           for (int l = 0; l < p_Nq_e; l++){
 	    pfloat S_y_eT_jl = S_y_eT[j][l];
             value1 += S_y_eT_jl * work2[k][i][l];	    
@@ -678,12 +727,22 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int i = 0; i < p_Nq_e; i+=2) {
 	  pfloat value1 = 0.0;
 	  pfloat value2 = 0.0;
 	  //#pragma unroll p_Nq_e
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat S_z_eT_kl = S_z_eT[k][l];
 	    value1 += S_z_eT_kl * work1[j][i][l];	    
@@ -700,7 +759,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 	
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; ++k) {
 	  const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e;
 	  work2[k][j][i] *= inv_L[v + element * p_Nq_e * p_Nq_e * p_Nq_e];
@@ -712,12 +776,22 @@
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {// TW reorder this
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int j = 0; j < p_Nq_e; j+=2) {
           pfloat value1 = 0.0;
 	  pfloat value2 = 0.0;
 	  //#pragma unroll p_Nq_e
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
           for (int l = 0; l < p_Nq_e; l++){
 	    pfloat S_x_e_il = S_x_e[i][l];
             value1 += S_x_e_il * work2[k][j][l];
@@ -732,12 +806,22 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i+=2) {
           pfloat value1 = 0.0;
 	  pfloat value2 = 0.0;
 	  //#pragma unroll p_Nq_e
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
           for (int l = 0; l < p_Nq_e; l++){
 	    pfloat S_y_e_jl = S_y_e[j][l];
             value1 += S_y_e_jl * work1[k][i][l];
@@ -755,13 +839,23 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int i = 0; i < p_Nq_e; i+=2) {
 	  
 	  pfloat value1 = 0.0;
 	  pfloat value2 = 0.0;
 	  //#pragma unroll p_Nq_e
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat S_z_e_kl = S_z_e[k][l];
 	    value1 += S_z_e_kl * work2[j][i][l];
@@ -780,7 +874,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 
           const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
@@ -839,7 +938,12 @@
     for(int j = 0; j < p_Nq_e; ++j; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){	
 	if(i < p_Nq && j < p_Nq) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for(int k = 0; k < p_Nq; ++k){
 	    const dlong elem_offset = element * p_Nq * p_Nq * p_Nq;
 	    const dlong idx = i + j * p_Nq + k * p_Nq * p_Nq + elem_offset;
@@ -2202,7 +2306,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -2216,7 +2325,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int j = 0; j < p_Nq_e; j++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -2232,7 +2346,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
           pfloat value = 0.0;
@@ -2249,7 +2368,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -2263,7 +2387,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 #pragma unroll p_Nq_e
@@ -2278,7 +2407,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
 	  pfloat value = 0.0;
@@ -2440,7 +2574,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2454,7 +2593,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int j = 0; j < p_Nq_e; j++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2470,7 +2614,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
           pfloat value = 0.0;
@@ -2487,7 +2636,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2502,7 +2656,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2517,7 +2676,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
 	  pfloat value = 0.0;
@@ -2666,7 +2830,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2680,7 +2849,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int j = 0; j < p_Nq_e; j++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2696,7 +2870,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
           pfloat value = 0.0;
@@ -2713,7 +2892,12 @@
     @barrier();
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2729,7 +2913,12 @@
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
         for (int j = 0; j < p_Nq_e; j++) {
           pfloat value = 0.0;
 	  //#pragma unroll p_Nq_e
@@ -2744,7 +2933,12 @@
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	for (int k = 0; k < p_Nq_e; k++) {
 	  
 	  pfloat value = 0.0;
@@ -2912,7 +3106,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_Nq_e; i++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -2928,7 +3127,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_Nq_e; j++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -2946,7 +3150,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_Nq_e; k++) {
 	  
 	    pfloat value = 0.0;
@@ -2966,7 +3175,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_Nq_e; i++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -2984,7 +3198,12 @@
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_Nq_e; j++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3001,7 +3220,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_Nq_e; k++) {
 	  
 	    pfloat value = 0.0;
@@ -3176,7 +3400,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_Nq_e; i++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3192,7 +3421,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_Nq_e; j++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3210,7 +3444,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_Nq_e; k++) {
 	  
 	    pfloat value = 0.0;
@@ -3230,7 +3469,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_Nq_e; i++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3248,7 +3492,12 @@
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_Nq_e; j++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3265,7 +3514,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_Nq_e; k++) {
 	  
 	    pfloat value = 0.0;
@@ -3434,7 +3688,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_Nq_e; i++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3450,7 +3709,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_Nq_e; j++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3468,7 +3732,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_Nq_e; k++) {
 	  
 	    pfloat value = 0.0;
@@ -3488,7 +3757,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_Nq_e; i++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3506,7 +3780,12 @@
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_Nq_e; j++) {
 	    pfloat value = 0.0;
 	    //#pragma unroll p_Nq_e
@@ -3523,7 +3802,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_Nq_e; k++) {
 	  
 	    pfloat value = 0.0;
@@ -3621,11 +3905,23 @@
 #elif p_Nq_e==7
 #define p_Nblk 5
 #elif p_Nq_e==8
+#if OCCA_USE_HIP==1
 #define p_Nblk 11
+#else
+#define p_Nblk 3
+#endif
 #elif p_Nq_e==9
+#if OCCA_USE_HIP==1
 #define p_Nblk 3
+#else
+#define p_Nbl 1
+#endif
 #elif p_Nq_e==10
+#if OCCA_USE_HIP==1
 #define p_Nblk 3
+#else
+#define p_Nblk 1
+#endif
 #else
 #define p_Nblk 1
 #endif
@@ -3692,7 +3988,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_halfNq_e; i++) {
 	    pfloat value1 = 0.0;
 	    pfloat value2 = 0.0;
@@ -3714,7 +4015,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_halfNq_e; ++j) {
 	    pfloat value1 = 0.0;
    	    pfloat value2 = 0.0;
@@ -3737,7 +4043,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_halfNq_e; k++) {
 	  
 	    pfloat value1 = 0.0;
@@ -3765,7 +4076,12 @@
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int i = 0; i < p_halfNq_e; i++) {
 	    pfloat value1 = 0.0;
 	    pfloat value2 = 0.0;
@@ -3788,7 +4104,12 @@
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int j = 0; j < p_halfNq_e; j++) {
 	    pfloat value1 = 0.0;
 	    pfloat value2 = 0.0;
@@ -3809,7 +4130,12 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int k = 0; k < p_halfNq_e; k++) {
 	  
 	    pfloat value1 = 0.0;
@@ -3918,11 +4244,23 @@
 #elif p_Nq_e==7
 #define p_Nblk 5
 #elif p_Nq_e==8
+#if OCCA_USE_HIP==1
 #define p_Nblk 11
+#else
+#define p_Nblk 3
+#endif
 #elif p_Nq_e==9
+#if OCCA_USE_HIP==1
 #define p_Nblk 3
+#else
+#define p_Nbl 1
+#endif
 #elif p_Nq_e==10
+#if OCCA_USE_HIP==1
 #define p_Nblk 3
+#else
+#define p_Nblk 1
+#endif
 #else
 #define p_Nblk 1
 #endif
@@ -4298,7 +4636,12 @@
 	  for (int i = 0; i < p_Nq_e; i++) 
 	    values[i] = 0;
 	  
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat tmp = work1[k][j][l][es];
 #pragma unroll
@@ -4323,7 +4666,12 @@
 	  for (int j = 0; j < p_Nq_e; j++) 
 	    values[j] = 0;
 	  
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat tmp = work1[k][l][i][es];
 #pragma unroll
@@ -4348,7 +4696,12 @@
 	  for (int k = 0; k < p_Nq_e; k++) 
 	    values[k] = 0;
 	  
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat tmp = work1[l][j][i][es];
 #pragma unroll
@@ -4379,7 +4732,12 @@
 	  for (int i = 0; i < p_Nq_e; i++) 
 	    values[i] = 0;
 	  
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat tmp = work1[k][j][l][es];
 #pragma unroll
@@ -4404,7 +4762,12 @@
 	  for (int j = 0; j < p_Nq_e; j++) 
 	    values[j] = 0;
 	  
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat tmp = work1[k][l][i][es];
 #pragma unroll
@@ -4428,7 +4791,11 @@
 	  for (int k = 0; k < p_Nq_e; k++) 
 	    values[k] = 0;
 	  
+#if OCCA_USE_HIP==1
 #pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
 	  for (int l = 0; l < p_Nq_e; l++){
 	    pfloat tmp = work1[l][j][i][es];
 #pragma unroll
@@ -4463,7 +4830,9 @@
     
 #if (!p_restrict)
     @barrier();
-    
+
+#if 0
+    // THIS LOOP DOES NOTHING WHEN IN PLACE
     // merged these three loops into one (however, the premise is shaky at best)
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for(int j = 0; j < p_Nq_e; ++j; @inner){
@@ -4484,6 +4853,7 @@
       }
 
     @barrier();
+#endif	
 
     for(int es = 0; es<p_Nblk; ++es; @inner)
       for(int j = 0; j < p_Nq_e; ++j; @inner){
