@@ -213,6 +213,7 @@ int main(int argc, char** argv)
 
   int minKernel = 0, maxKernel = 11;
   for(int knl=minKernel;knl<=maxKernel;++knl){
+    if(knl!=8){
     occa::properties saveprops = props;    
     saveprops["defines/p_knl"] = knl;
     fdmKernel = platform->device.buildKernel(fileName, saveprops, true);
@@ -270,6 +271,7 @@ int main(int argc, char** argv)
 		<< " kernel=" << knl
 		<< " checksum=" << std::setprecision(16) << checksum
 		<< "\n";
+    }
   }
   
   MPI_Finalize();
