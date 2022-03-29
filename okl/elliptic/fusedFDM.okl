@@ -2593,22 +2593,46 @@
 #endif
 #elif p_Nq_e==9
 #if OCCA_USE_HIP==1
-#define p_Nblk 3
+#define p_Nblk 1
 #else
 #define p_Nbl 1
 #endif
+
 #elif p_Nq_e==10
 #if OCCA_USE_HIP==1
 #define p_Nblk 3
 #else
 #define p_Nblk 1
 #endif
+
+#elif p_Nq_e==11
+#if OCCA_USE_HIP==1
+#define p_Nblk 1
 #else
 #define p_Nblk 1
 #endif
 
-  for (dlong eo = 0; eo < Nelements; eo+=p_Nblk; @outer) {
+#elif p_Nq_e==12
+#if OCCA_USE_HIP==1
+#define p_Nblk 3
+#else
+#define p_Nblk 1
+#endif
 
+#elif p_Nq_e==13
+#if OCCA_USE_HIP==1
+#define p_Nblk 3
+#else
+#define p_Nblk 1
+#endif
+
+
+#else
+#define p_Nblk 1
+#endif
+  
+  for (dlong eo = 0; eo < Nelements; eo+=p_Nblk; @outer) {
+    
     @shared pfloat S_x_e [p_Nq_e][p_Nq_e][p_Nblk];
     @shared pfloat S_y_e [p_Nq_e][p_Nq_e][p_Nblk];
     @shared pfloat S_z_e [p_Nq_e][p_Nq_e][p_Nblk];
@@ -2616,8 +2640,7 @@
     @shared pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e][p_Nblk];
     @exclusive dlong element;
 
-    @barrier();
-    for(int es = 0; es<p_Nblk; ++es; @inner)
+    for(int es = 0; es<p_Nblk; ++es; @inner){
       for(int j = 0; j < p_Nq_e; ++j; @inner) {
 	for(int i = 0; i < p_Nq_e; ++i; @inner) {
 
@@ -2645,10 +2668,12 @@
 	  }
 	}
       }
-
+    }
+    
     // TW: we merge the boundary mods into a single write
     @barrier();
-    for(int es = 0; es<p_Nblk; ++es; @inner)
+
+    for(int es = 0; es<p_Nblk; ++es; @inner){
       for(int j = 0; j < p_Nq_e; ++j; @inner){
 	for(int i = 0; i < p_Nq_e; ++i; @inner){
 
@@ -2664,9 +2689,11 @@
 	  }
 	}
       }
-
+    }
+    
     @barrier();
-    for(int es = 0; es<p_Nblk; ++es; @inner)
+
+    for(int es = 0; es<p_Nblk; ++es; @inner){
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
 	  pfloat values[p_Nq_e];
@@ -2686,9 +2713,11 @@
 	    work2[k][j][i][es] = values[i];
 	}
       }
+    }
+
     @barrier();
     
-    for(int es = 0; es<p_Nblk; ++es; @inner)
+    for(int es = 0; es<p_Nblk; ++es; @inner){
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
@@ -2709,9 +2738,11 @@
 	    work1[k][j][i][es] = values[j];
 	}
       }
+    }
     
     @barrier();
-    for(int es = 0; es<p_Nblk; ++es; @inner)
+
+    for(int es = 0; es<p_Nblk; ++es; @inner){
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 	  
@@ -2739,9 +2770,11 @@
 	  }
 	}
       }
-  
+    }
+    
     @barrier();
-    for(int es = 0; es<p_Nblk; ++es; @inner)
+
+    for(int es = 0; es<p_Nblk; ++es; @inner){
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int j = 0; j < p_Nq_e; j++; @inner) {
 
@@ -2762,9 +2795,11 @@
 	    work1[k][j][i][es] = values[i];
 	}
       }
-  
+    }
+    
     @barrier();
-    for(int es = 0; es<p_Nblk; ++es; @inner)
+    
+    for(int es = 0; es<p_Nblk; ++es; @inner){
       for (int k = 0; k < p_Nq_e; k++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
 
@@ -2785,8 +2820,10 @@
 	    work2[k][j][i][es] = values[j];
 	}
       }
-  
+    }
+    
     @barrier();
+
     for(int es = 0; es<p_Nblk; ++es; @inner){
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 	for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -2826,7 +2863,7 @@
 	}
       }
     }
-  
+    
 #if (!p_restrict)
     // merged these three loops into one (however, the premise is shaky at best)
     for(int es = 0; es<p_Nblk; ++es; @inner){
@@ -2865,7 +2902,7 @@
     }
     
 #endif
-/* if (!p_restrict) */
+    /* if (!p_restrict) */
     
   }
 }
@@ -2903,9 +2940,9 @@
 #elif p_Nq_e==8
 #define p_Nblk 5
 #elif p_Nq_e==9
-#define p_Nblk 3
-#elif p_Nq_e==10
 #define p_Nblk 5
+#elif p_Nq_e==10
+#define p_Nblk 3
 #elif p_Nq_e==11
 #define p_Nblk 3
 #elif p_Nq_e==12
