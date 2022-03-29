@@ -3168,7 +3168,7 @@
 	}
       }
     
-    
+#if 0    
 #if (!p_restrict)
     @barrier();
 
@@ -3209,7 +3209,320 @@
 	}
       }
 #endif  /* if (!p_restrict) */
+#endif    
+  }
+}
+ 
+
+
+@kernel void fusedFDM_v11(const dlong Nelements,
+#if p_overlap
+			  @restrict const dlong*  elementList,
+#endif
+			  @restrict pfloat* Su,
+			  @restrict const pfloat* S_x,
+			  @restrict const pfloat* S_y,
+			  @restrict const pfloat* S_z,
+			  @restrict const pfloat* inv_L,
+#if p_restrict
+			  @restrict const dfloat* wts,
+#endif
+			  @restrict pfloat* u
+			  )
+{
+  
+  for (dlong e = 0; e < Nelements; ++e; @outer) {
+
+    @shared pfloat S_x_e [p_Nq_e][p_Nq_e];
+    @shared pfloat S_y_e [p_Nq_e][p_Nq_e];
+    @shared pfloat S_z_e [p_Nq_e][p_Nq_e];
+    @shared pfloat work1[p_Nq_e][p_Nq_e][p_Nq_e];
     
+    @exclusive dlong element;
+    
+    for(int j = 0; j < p_Nq_e; ++j; @inner) {
+      for(int i = 0; i < p_Nq_e; ++i; @inner) {
+	
+	dlong my_elem = e;
+	
+#if p_overlap
+	element = (my_elem<Nelements) ? elementList[my_elem]:-1;
+#else
+	element = (my_elem<Nelements) ? my_elem: -1;
+#endif
+	
+	const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
+	
+	if(element!=-1){
+#pragma unroll
+	  for(int k = 0; k < p_Nq_e; ++k) {
+	    const dlong idx = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
+	    work1[k][j][i] = u[idx];
+	  }
+	  
+	  const int ij = j + i * p_Nq_e + element * p_Nq_e * p_Nq_e;
+	  S_x_e [i][j] = S_x[ij];
+	  S_y_e [i][j] = S_y[ij];
+	  S_z_e [i][j] = S_z[ij];
+	}
+      }
+    }
+    
+    // TW: we merge the boundary mods into a single write
+    @barrier();
+    
+    for(int j = 0; j < p_Nq_e; ++j; @inner){
+      for(int i = 0; i < p_Nq_e; ++i; @inner){
+	
+	if(i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
+	  const int l1 = 0;
+	  const int l2 = 2;
+	  work1[i][j][l1] -= work1[i][j][l2];
+	  work1[i][j][p_Nq_e - l1 - 1] -= work1[i][j][p_Nq_e - l2 - 1];
+	  work1[i][l1][j] -= work1[i][l2][j];
+	  work1[i][p_Nq_e - l1 - 1][j] -= work1[i][p_Nq_e - l2 - 1][j];
+	  work1[l1][i][j] -= work1[l2][i][j];
+	  work1[p_Nq_e - l1 - 1][i][j] -= work1[p_Nq_e - l2 - 1][i][j];
+	}
+      }
+    }
+    
+    @barrier();
+    
+    for (int k = 0; k < p_Nq_e; k++; @inner) {
+      for (int j = 0; j < p_Nq_e; j++; @inner) {
+	pfloat values[p_Nq_e];
+	
+	for (int i = 0; i < p_Nq_e; i++) 
+	  values[i] = 0;
+	
+#if OCCA_USE_HIP==1
+#pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+	
+	for (int l = 0; l < p_Nq_e; l++){
+	  pfloat tmp = work1[k][j][l];
+#pragma unroll
+	  for (int i = 0; i < p_Nq_e; i++) {
+	    values[i] += S_x_e[l][i]*tmp;
+	  }
+	}
+	
+	for (int i = 0; i < p_Nq_e; i++) 
+	  work1[k][j][i] = values[i];
+      }
+    }
+    
+    @barrier();
+    
+    for (int k = 0; k < p_Nq_e; k++; @inner) {
+      for (int i = 0; i < p_Nq_e; i++; @inner) {
+	
+	pfloat values[p_Nq_e];
+	
+	for (int j = 0; j < p_Nq_e; j++) 
+	  values[j] = 0;
+	
+#if OCCA_USE_HIP==1
+#pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+	
+	for (int l = 0; l < p_Nq_e; l++){
+	  pfloat tmp = work1[k][l][i];
+#pragma unroll
+	  for (int j = 0; j < p_Nq_e; j++) {
+	    values[j] += S_y_e[l][j]*tmp;
+	  }
+	}
+	
+	for (int j = 0; j < p_Nq_e; j++) 
+	  work1[k][j][i] = values[j];
+      }
+    }
+    
+    @barrier();
+    
+    for (int j = 0; j < p_Nq_e; j++; @inner) {
+      for (int i = 0; i < p_Nq_e; i++; @inner) {
+	
+	pfloat values[p_Nq_e];
+	
+	for (int k = 0; k < p_Nq_e; k++) 
+	  values[k] = 0;
+	
+#if OCCA_USE_HIP==1
+#pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+	
+	for (int l = 0; l < p_Nq_e; l++){
+	  pfloat tmp = work1[l][j][i];
+#pragma unroll
+	  for (int k = 0; k < p_Nq_e; k++) {
+	    values[k] += S_z_e[l][k]*tmp;
+	  }
+	}
+	
+	if(element!=-1){
+	  for (int k = 0; k < p_Nq_e; k++) {
+	    const int v1 = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e;
+	    const pfloat tmp =  inv_L[v1 + element * p_Nq_e * p_Nq_e * p_Nq_e];
+	    
+	    work1[k][j][i] = values[k]*tmp;
+	  }
+	}
+      }
+    }
+    
+    @barrier();
+    
+    for (int k = 0; k < p_Nq_e; k++; @inner) {
+      for (int j = 0; j < p_Nq_e; j++; @inner) {
+	
+	pfloat values[p_Nq_e];
+	
+	for (int i = 0; i < p_Nq_e; i++) 
+	  values[i] = 0;
+	
+#if OCCA_USE_HIP==1
+#pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+	
+	for (int l = 0; l < p_Nq_e; l++){
+	  pfloat tmp = work1[k][j][l];
+#pragma unroll
+	  for (int i = 0; i < p_Nq_e; i++) {
+	    values[i] += S_x_e[i][l]*tmp;
+	  }
+	}
+	
+	for (int i = 0; i < p_Nq_e; i++) 
+	  work1[k][j][i] = values[i];
+      }
+    }
+    
+    @barrier();
+    
+    for (int k = 0; k < p_Nq_e; k++; @inner) {
+      for (int i = 0; i < p_Nq_e; i++; @inner) {
+	
+	pfloat values[p_Nq_e];
+	
+	for (int j = 0; j < p_Nq_e; j++) 
+	  values[j] = 0;
+	
+#if OCCA_USE_HIP==1
+#pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+	
+	for (int l = 0; l < p_Nq_e; l++){
+	  pfloat tmp = work1[k][l][i];
+#pragma unroll
+	  for (int j = 0; j < p_Nq_e; j++) {
+	    values[j] += S_y_e[j][l]*tmp;
+	  }
+	}
+	for (int j = 0; j < p_Nq_e; j++) 
+	  work1[k][j][i] = values[j];
+      }
+    }
+    
+    @barrier();
+    
+    for (int j = 0; j < p_Nq_e; j++; @inner) {
+      for (int i = 0; i < p_Nq_e; i++; @inner) {
+	
+	pfloat values[p_Nq_e];
+	
+	for (int k = 0; k < p_Nq_e; k++) 
+	  values[k] = 0;
+	
+#if OCCA_USE_HIP==1
+#pragma nounroll
+#else
+#pragma unroll p_Nq_e
+#endif
+	for (int l = 0; l < p_Nq_e; l++){
+	  pfloat tmp = work1[l][j][i];
+#pragma unroll
+	  for (int k = 0; k < p_Nq_e; k++) {
+	    values[k] += S_z_e[k][l]*tmp;
+	  }
+	}
+	
+#if (!p_restrict)
+	if(element!=-1){
+	  for (int k = 0; k < p_Nq_e; k++) { 
+	    const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
+	    const int v1 = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
+	    Su[v1] = values[k];
+	    work1[k][j][i] = values[k];
+	  }
+	}
+#else
+	if(element!=-1){
+	  for (int k = 0; k < p_Nq_e; k++) { 
+	    if(i>=1 && i < p_Nq_e-1 && j>=1 && j < p_Nq_e-1 && k>=1 && k<p_Nq_e-1) {
+	      const dlong elem_offset = element * p_Nq * p_Nq * p_Nq;
+	      const dlong idx1 = i-1 + (j-1) * p_Nq + (k-1) * p_Nq * p_Nq + elem_offset;
+	      Su[idx1] = values[k]* wts[idx1];
+	    }
+	  }
+	}
+#endif
+      }
+    }
+    
+#if 1    
+#if (!p_restrict)
+    @barrier();
+
+#if 0
+    // THIS LOOP DOES NOTHING WHEN IN PLACE
+    // merged these three loops into one (however, the premise is shaky at best)
+    for(int es = 0; es<p_Nblk; ++es; @inner)
+      for(int j = 0; j < p_Nq_e; ++j; @inner){
+	for(int i = 0; i < p_Nq_e; ++i; @inner){
+	  if(i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
+	    const int l1 = 0;
+	    const int l2 = 0;
+	    work1[l1][j][i]              = work1[l2][j][i];
+	    work1[p_Nq_e - l1 - 1][j][i] = work1[p_Nq_e - l2 - 1][j][i];
+	    
+	    work1[i][l1][j] = work1[i][l2][j];
+	    work1[i][p_Nq_e - l1 - 1][j] = work1[i][p_Nq_e - l2 - 1][j];
+
+	    work1[i][j][l1] = work1[i][j][l2];
+	    work1[i][j][p_Nq_e - l1 - 1] = work1[i][j][p_Nq_e - l2 - 1];
+	  }
+	}
+      }
+
+    @barrier();
+#endif	
+
+    for(int j = 0; j < p_Nq_e; ++j; @inner){
+      for(int i = 0; i < p_Nq_e; ++i; @inner) {
+	if(element!=-1){
+	  for(int k = 0; k < p_Nq_e; ++k){
+	    const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
+	    const dlong idx = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
+	    u[idx] = work1[k][j][i];
+	  }
+	}
+      }
+    }
+#endif  /* if (!p_restrict) */
+#endif    
   }
 }
  
