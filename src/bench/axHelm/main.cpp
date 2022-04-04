@@ -14,12 +14,14 @@
 namespace {
 
 occa::kernel axKernel;
+occa::kernel refAxKernel;
 
 occa::memory o_D; 
 occa::memory o_S;    
 occa::memory o_ggeo;
 occa::memory o_q;    
 occa::memory o_Aq;
+occa::memory o_Aq_ref;
 occa::memory o_lambda;
 occa::memory o_exyz;
 occa::memory o_gllwz;
@@ -28,11 +30,52 @@ occa::memory o_elementList;
 int Np; 
 int Ng = -1;
 int Nelements; 
+size_t wordSize = 8;
 
-double run(int Ntests, int BKmode, int Ndim, int computeGeom)
+template<typename FloatingPointType>
+double computeErrImpl(occa::memory o_Ax, occa::memory o_Ax_ref)
 {
+  std::vector<FloatingPointType> Ax(Nelements * Np, 0.0);
+  std::vector<FloatingPointType> AxRef(Nelements * Np, 0.0);
+  o_Ax.copyTo(Ax.data(), Nelements * Np * sizeof(FloatingPointType));
+  o_Ax_ref.copyTo(AxRef.data(), Nelements * Np * sizeof(FloatingPointType));
+
+  FloatingPointType error = 0.0;
+
+  for(auto i = 0; i < Ax.size(); ++i){
+    error = std::max(error, std::abs(Ax[i]-AxRef[i]));
+  }
+
+  double lInfError = static_cast<double>(error);
+  MPI_Allreduce(MPI_IN_PLACE, &lInfError, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
+  return lInfError;
+}
+
+double computeError(occa::memory o_Ax, occa::memory o_Ax_ref){
+  double lInfError = -100.0;
+  if(wordSize == 4){
+    lInfError = computeErrImpl<float>(o_Ax, o_Ax_ref);
+  }
+  else if(wordSize == 8){
+    lInfError = computeErrImpl<double>(o_Ax, o_Ax_ref);
+  }
+  return lInfError;
+}
+
+std::pair<double,double> run(int Ntests, int BKmode, int Ndim, int computeGeom, bool performCorrectnessCheck)
+{
+  double error = -100.0;
   const int offset = Nelements * Np;
   const int loffset = 0;
+
+  if(performCorrectnessCheck){
+    if(!computeGeom){
+      axKernel(Nelements, offset, loffset, o_elementList, o_ggeo, o_D, o_S, o_lambda, o_q, o_Aq);
+      refAxKernel(Nelements, offset, loffset, o_elementList, o_ggeo, o_D, o_S, o_lambda, o_q, o_Aq_ref);
+      error = computeError(o_Aq, o_Aq_ref);
+    }
+  }
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
@@ -48,7 +91,7 @@ double run(int Ntests, int BKmode, int Ndim, int computeGeom)
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
-  return (MPI_Wtime() - start) / Ntests;
+  return std::make_pair((MPI_Wtime() - start) / Ntests, error);
 } 
 
 void* (*randAlloc)(int);
@@ -95,7 +138,6 @@ int main(int argc, char** argv)
   int okl = 1;
   int BKmode = 0;
   int Ntests = -1;
-  size_t wordSize = 8;
   int computeGeom = 0;
 
   while(1) {
@@ -208,13 +250,42 @@ int main(int argc, char** argv)
   }
   kernelName += "Hex3D";
   if (Ndim > 1) kernelName += "_N" + std::to_string(Ndim);
-   
+
+  if(platform->device.mode() == "CUDA"){
+    props["compiler_flags"] += " -O3 ";
+    props["compiler_flags"] += " --ftz=true ";
+    props["compiler_flags"] += " --prec-div=false ";
+    props["compiler_flags"] += " --prec-sqrt=false ";
+    props["compiler_flags"] += " --use_fast_math ";
+    props["compiler_flags"] += " --fmad=true ";
+    //props["compiler_flags"] += "-Xptxas -dlcm=ca";
+  }
+
+  if(1)
+  if(platform->device.mode() == "HIP"){
+    props["defines/OCCA_USE_HIP"] = 1;
+    props["compiler_flags"] += " -O3 ";
+    props["compiler_flags"] += " -ffp-contract=on ";  // was fast
+    //    props["compiler_flags"] += " -funsafe-math-optimizations ";
+    //    props["compiler_flags"] += " -ffast-math ";
+    //    props["compiler_flags"] += " -fno-vectorize "; // THIS CAN SLOW THINGS DOWN
+  }
+
+  
+  std::cout << props;
+
+  
   const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
   const std::string fileName = 
     installDir + "/okl/elliptic/" + kernelName + ext;
 
-  axKernel = platform->device.buildKernel(fileName, props, true);
-
+  const std::string refKernelName = "referenceImplementation";
+  {
+    occa::properties kernelProps = props;
+    kernelProps["defines/p_knl"] = -1;
+    refAxKernel = platform->device.buildKernel(fileName, refKernelName, kernelProps);
+  }
+  
   // populate arrays
   randAlloc = &rand64Alloc; 
   if(wordSize == 4) randAlloc = &rand32Alloc;
@@ -240,6 +311,7 @@ int main(int argc, char** argv)
   o_q = platform->device.malloc((Ndim * Np) * Nelements * wordSize, q);
   free(q);
   o_Aq = platform->device.malloc((Ndim * Np) * Nelements * wordSize, Aq);
+  o_Aq_ref = platform->device.malloc((Ndim * Np) * Nelements * wordSize, Aq);
   free(Aq);
   o_exyz = platform->device.malloc((3 * Np_g) * Nelements * wordSize, exyz);
   free(exyz);
@@ -250,42 +322,63 @@ int main(int argc, char** argv)
   o_lambda = platform->device.malloc(2 * Np * Nelements * wordSize, lambda);
   free(lambda);
 
-  // warm-up
-  double elapsed = run(10, BKmode, Ndim, computeGeom);
-  const int elapsedTarget = 10;
-  if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+  int kernels[4] = {1,3,4,5};
+  constexpr int Nkernels = 4;
+  for(int ind=0;ind<Nkernels;++ind){
+    int kernelNumber  = kernels[ind];
 
-  // ***** 
-  elapsed = run(Ntests, BKmode, Ndim, computeGeom);
-  // ***** 
+    // 3D kernel layout requires a sufficiently small order
+    // so as to not exceed the maximum threads / thread block
+    if(Np > 1024 && kernelNumber == 3) continue;
+    if(Np > 1024 && kernelNumber == 7) continue;
+
+    auto kernelProps = props;
+    kernelProps["defines/p_knl"] = kernelNumber;
+    axKernel = platform->device.buildKernel(fileName, kernelProps, true);
+    
+    // warm-up
+    auto elapsedAndError = run(10, BKmode, Ndim, computeGeom, true);
+    double elapsed = elapsedAndError.first;
+    const double error = elapsedAndError.second;
+    const int elapsedTarget = 10;
+    if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+
+    // ***** 
+    elapsedAndError = run(Ntests, BKmode, Ndim, computeGeom, false);
+    // ***** 
+
+    elapsed = elapsedAndError.first;
  
-  // print statistics
-  const dfloat GDOFPerSecond = (size * Nelements * Ndim * (N * N * N) / elapsed) / 1.e9;
+    // print statistics
+    const dfloat GDOFPerSecond = (size * Nelements * Ndim * (N * N * N) / elapsed) / 1.e9;
 
-  size_t bytesMoved = Ndim * 2 * Np * wordSize; // x, Ax
-  bytesMoved += 6 * Np_g * wordSize; // geo
-  if(!BKmode) bytesMoved += 3 * Np * wordSize; // lambda1, lambda2, Jw
-  const double bw = (size * Nelements * bytesMoved / elapsed) / 1.e9;
+    size_t bytesMoved = Ndim * 2 * Np * wordSize; // x, Ax
+    bytesMoved += 6 * Np_g * wordSize; // geo
+    if(!BKmode) bytesMoved += 3 * Np * wordSize; // lambda1, lambda2, Jw
+    const double bw = (size * Nelements * bytesMoved / elapsed) / 1.e9;
 
-  double flopCount = Np * 12 * Nq + 15 * Np;
-  if(!BKmode) flopCount += 5 * Np;
-  const double gflops = Ndim * (size * flopCount * Nelements / elapsed) / 1.e9;
+    double flopCount = Np * 12 * Nq + 15 * Np;
+    if(!BKmode) flopCount += 5 * Np;
+    const double gflops = Ndim * (size * flopCount * Nelements / elapsed) / 1.e9;
 
-  if(rank == 0)
-    std::cout << "MPItasks=" << size
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " Ndim=" << Ndim
-              << " N=" << N
-              << " Ng=" << Ng
-              << " Nelements=" << size * Nelements
-              << " elapsed time=" << elapsed
-              << " bkMode=" << BKmode
-              << " wordSize=" << 8*wordSize
-              << " GDOF/s=" << GDOFPerSecond
-              << " GB/s=" << bw
-              << " GFLOPS/s=" << gflops
-              << "\n";
+    if(rank == 0)
+      std::cout << "MPItasks=" << size
+                << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests
+                << " Ndim=" << Ndim
+                << " N=" << N
+                << " Ng=" << Ng
+                << " Nelements=" << size * Nelements
+                << " elapsed time=" << elapsed
+                << " bkMode=" << BKmode
+                << " wordSize=" << 8*wordSize
+                << " error=" << error
+                << " kernel=" << kernelNumber
+                << " GDOF/s=" << GDOFPerSecond
+                << " GB/s=" << bw
+                << " GFLOPS/s=" << gflops
+                << "\n";
+  }
 
   MPI_Finalize();
   exit(0);

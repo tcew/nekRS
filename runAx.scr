@@ -1,0 +1,14 @@
+
+echo "elliptic Ax"
+
+./build/nekrs-bench-axhelm --p-order  3 --elements 74088 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order  4 --elements 32768 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order  5 --elements 17576 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order  6 --elements  9261 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order  7 --elements  5832 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order  8 --elements  4096 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order  9 --elements  2744 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order 10 --elements  2197 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order 11 --elements  1728 --backend HIP --bk-mode --fp32
+./build/nekrs-bench-axhelm --p-order 12 --elements  1331 --backend HIP --bk-mode --fp32
+
