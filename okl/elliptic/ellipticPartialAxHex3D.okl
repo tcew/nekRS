@@ -867,9 +867,9 @@
             const dfloat G22 = ggeo[gbase + p_G22ID * p_Np];
 
 #ifdef p_poisson
-            const dfloat r_wJ = 0;
+            r_wJ = 0;
 #else
-            const dfloat r_wJ = ggeo[gbase + p_GWJID * p_Np];
+	    r_wJ = ggeo[gbase + p_GWJID * p_Np];
 #endif
 
             // #pragma unroll p_Unr
