@@ -1,0 +1,25 @@
+
+echo "subcycling Ax"
+
+./build/nekrs-bench-advsub --p-order  3 --elements 74088 --backend HIP --c-order 4
+./build/nekrs-bench-advsub --p-order  4 --elements 32768 --backend HIP --c-order 6
+./build/nekrs-bench-advsub --p-order  5 --elements 17576 --backend HIP --c-order 7
+./build/nekrs-bench-advsub --p-order  6 --elements  9261 --backend HIP --c-order 9
+./build/nekrs-bench-advsub --p-order  7 --elements  5832 --backend HIP --c-order 10
+./build/nekrs-bench-advsub --p-order  8 --elements  4096 --backend HIP --c-order 12
+./build/nekrs-bench-advsub --p-order  9 --elements  2744 --backend HIP --c-order 13
+./build/nekrs-bench-advsub --p-order 10 --elements  2197 --backend HIP --c-order 15
+./build/nekrs-bench-advsub --p-order 11 --elements  1728 --backend HIP --c-order 16
+./build/nekrs-bench-advsub --p-order 12 --elements  1331 --backend HIP --c-order 18
+
+
+./build/nekrs-bench-advsub --p-order  3 --elements 74088 --backend HIP --c-order 4
+./build/nekrs-bench-advsub --p-order  4 --elements 65536 --backend HIP --c-order 6
+./build/nekrs-bench-advsub --p-order  5 --elements 32768 --backend HIP --c-order 7
+./build/nekrs-bench-advsub --p-order  6 --elements 18522 --backend HIP --c-order 9
+./build/nekrs-bench-advsub --p-order  7 --elements 11664 --backend HIP --c-order 10
+./build/nekrs-bench-advsub --p-order  8 --elements  8192 --backend HIP --c-order 12
+./build/nekrs-bench-advsub --p-order  9 --elements  5488 --backend HIP --c-order 13
+./build/nekrs-bench-advsub --p-order 10 --elements  4394 --backend HIP --c-order 15
+./build/nekrs-bench-advsub --p-order 11 --elements  3456 --backend HIP --c-order 16
+./build/nekrs-bench-advsub --p-order 12 --elements  2662 --backend HIP --c-order 18

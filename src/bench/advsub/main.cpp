@@ -30,6 +30,38 @@ dlong fieldOffset;
 dlong cubatureOffset;
 bool dealias;
 
+double checksum(int N, occa::memory &o_a){
+
+  dfloat* a = (dfloat*) calloc(N, sizeof(dfloat));
+  o_a.copyTo(a);
+  double res = 0;
+  for(int n=0;n<N;++n){
+    res+=fabs(a[n]);
+  }
+  free(a);
+  
+  return res;
+
+
+}
+  
+double test(int nFields){
+    const dfloat c0 = 0.1;
+    const dfloat c1 = 0.2;
+    const dfloat c2 = 0.3;
+    
+    if(!dealias) {
+      subcyclingKernel(Nelements, o_elementList, o_cubD, fieldOffset,
+		       0, o_invLMM, o_BdivW, c0, c1, c2, o_conv, o_Ud, o_NU);
+    } else {
+      subcyclingKernel(Nelements, o_elementList, o_cubD, o_cubInterpT, fieldOffset,
+		       cubatureOffset, 0, o_invLMM, o_BdivW, c0, c1, c2, o_conv, o_Ud, o_NU);
+    }
+
+    double csum = checksum(fieldOffset*nFields, o_NU);
+    return csum;
+}
+  
 double run(int Ntests)
 {
   platform->device.finish();
@@ -203,6 +235,15 @@ int main(int argc, char** argv)
   props["defines/p_NVfields"] = nFields;
   props["defines/p_MovingMesh"] = 0;
 
+  if(platform->device.mode() == "HIP"){
+    props["compiler_flags"] += " -O3 ";
+    //    props["compiler_flags"] += " -ffp-contract=fast ";
+    //    props["compiler_flags"] += " -funsafe-math-optimizations ";
+    //    props["compiler_flags"] += " -ffast-math ";
+    //    props["compiler_flags"] += " -fno-vectorize ";
+
+  }
+  
   std::string kernelName;
   if(dealias){
     kernelName = "subCycleStrongCubatureVolumeHex3D";
@@ -252,7 +293,7 @@ int main(int argc, char** argv)
   free(Ud);
 
   // warm-up
-  double elapsed = run(10);
+  double elapsed = run(10);    
   const int elapsedTarget = 10;
   if(Ntests < 0) Ntests = elapsedTarget/elapsed;
 
@@ -286,6 +327,9 @@ int main(int argc, char** argv)
   }
   const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
 
+  // get an l1 norm of NU
+  double csum = test(nFields);
+  
   if(rank == 0)
     std::cout << "MPItasks=" << size
               << " OMPthreads=" << Nthreads
@@ -298,6 +342,7 @@ int main(int argc, char** argv)
               << " GDOF/s=" << GDOFPerSecond
               << " GB/s=" << bw
               << " GFLOPS/s=" << gflops
+	      << " checksum=" << csum
               << "\n";
 
   MPI_Finalize();
