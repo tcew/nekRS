@@ -291,7 +291,7 @@ int main(int argc, char** argv)
   // currently lacking a native implementation of the non-dealiased kernel
   if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
 
-  int Nkernels = 10;
+  int Nkernels = 12;
   for(int knl=0;knl<Nkernels;++knl){
     occa::properties newprops = props;
     newprops["defines/p_knl"] = knl;
