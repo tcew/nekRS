@@ -251,14 +251,6 @@ int main(int argc, char** argv)
     kernelName = "subCycleStrongVolumeHex3D";
   }
 
-  const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
-  std::string fileName = 
-    installDir + "/okl/nrs/" + kernelName + ext;
-  
-  // currently lacking a native implementation of the non-dealiased kernel
-  if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
-
-  subcyclingKernel = platform->device.buildKernel(fileName, props, true);
 
   // populate arrays
 
@@ -292,59 +284,76 @@ int main(int argc, char** argv)
   o_Ud = platform->device.malloc(nFields * fieldOffset * wordSize, Ud);
   free(Ud);
 
-  // warm-up
-  double elapsed = run(10);    
-  const int elapsedTarget = 10;
-  if(Ntests < 0) Ntests = elapsedTarget/elapsed;
-
-  // ***** 
-  elapsed = run(Ntests);
-  // ***** 
- 
-  // print statistics
-  const dfloat GDOFPerSecond = nFields * (size * Nelements * (N * N * N) / elapsed) / 1.e9;
-
-  size_t bytesPerElem = 2 * nFields * Np; // Ud, NU
-  bytesPerElem += Np; // inv mass matrix
-  bytesPerElem += nFields * cubNp * nEXT; // U(r,s,t)
-
-  size_t otherBytes = cubNq * cubNq; // D
-  if(cubNq > Nq){
-    otherBytes += Nq * cubNq; // interpolator
-  }
-  otherBytes   *= wordSize;
-  bytesPerElem *= wordSize;
-  const double bw = (size * (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
-
-  double flopCount = 0.0; // per elem basis
-  if(cubNq > Nq){
-    flopCount += 6. * cubNp * nEXT; // extrapolate U(r,s,t) to current time
-    flopCount += 18. * cubNp * cubNq; // apply Dcub
-    flopCount += 9. * Np; // compute NU
-    flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
-  } else {
-    flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
-  }
-  const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
-
-  // get an l1 norm of NU
-  double csum = test(nFields);
+  const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
+    std::string fileName = 
+    installDir + "/okl/nrs/" + kernelName + ext;
   
-  if(rank == 0)
-    std::cout << "MPItasks=" << size
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " N=" << N
-              << " cubN=" << cubN
-              << " Nelements=" << size * Nelements
-              << " elapsed time=" << elapsed
-              << " wordSize=" << 8*wordSize
-              << " GDOF/s=" << GDOFPerSecond
-              << " GB/s=" << bw
-              << " GFLOPS/s=" << gflops
-	      << " checksum=" << csum
-              << "\n";
+  // currently lacking a native implementation of the non-dealiased kernel
+  if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
 
+  int Nkernels = 10;
+  for(int knl=0;knl<Nkernels;++knl){
+    occa::properties newprops = props;
+    newprops["defines/p_knl"] = knl;
+    
+    subcyclingKernel = platform->device.buildKernel(fileName, newprops, true);
+    
+    
+    // warm-up
+    double elapsed = run(100);    
+    const int elapsedTarget = 10;
+    if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+    
+    // ***** 
+    elapsed = run(Ntests);
+    // ***** 
+    
+    // print statistics
+    const dfloat GDOFPerSecond = nFields * (size * Nelements * (N * N * N) / elapsed) / 1.e9;
+    
+    size_t bytesPerElem = 2 * nFields * Np; // Ud, NU
+    bytesPerElem += Np; // inv mass matrix
+    bytesPerElem += nFields * cubNp * nEXT; // U(r,s,t)
+    
+    size_t otherBytes = cubNq * cubNq; // D
+    if(cubNq > Nq){
+      otherBytes += Nq * cubNq; // interpolator
+    }
+    otherBytes   *= wordSize;
+    bytesPerElem *= wordSize;
+    const double bw = (size * (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
+    
+    double flopCount = 0.0; // per elem basis
+    if(cubNq > Nq){
+      flopCount += 6. * cubNp * nEXT; // extrapolate U(r,s,t) to current time
+      flopCount += 18. * cubNp * cubNq; // apply Dcub
+      flopCount += 9. * Np; // compute NU
+      flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    } else {
+    flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
+    }
+    const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
+    
+    // get an l1 norm of NU
+    double csum = test(nFields);
+    
+    if(rank == 0)
+      std::cout << "MPItasks=" << size
+		<< " OMPthreads=" << Nthreads
+		<< " NRepetitions=" << Ntests
+		<< " N=" << N
+		<< " cubN=" << cubN
+		<< " Nelements=" << size * Nelements
+		<< " elapsed time=" << elapsed
+		<< " wordSize=" << 8*wordSize
+		<< " GDOF/s=" << GDOFPerSecond
+		<< " GB/s=" << bw
+		<< " GFLOPS/s=" << gflops
+		<< " checksum=" << csum
+		<< " kernel=" << knl
+		<< "\n";
+  }
+  
   MPI_Finalize();
   exit(0);
 }
