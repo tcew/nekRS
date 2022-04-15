@@ -211,6 +211,7 @@ int main(int argc, char** argv)
         N);
     exit(1);
   }
+  int maxEXT = 3;
   Nelements = std::max(1, Nelements/size);
   const int Nq = N + 1;
   Np = Nq * Nq * Nq;
@@ -231,7 +232,6 @@ int main(int argc, char** argv)
   static constexpr int nFields = 3;
   props["defines/p_cubNq"] = cubNq;
   props["defines/p_cubNp"] = cubNp;
-  props["defines/p_nEXT"] = nEXT;
   props["defines/p_NVfields"] = nFields;
   props["defines/p_MovingMesh"] = 0;
 
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
   void *invLMM   = randAlloc(Nelements * Np);
   void *cubD  = randAlloc(cubNq * cubNq);
   void *NU  = randAlloc(nFields * fieldOffset);
-  void *conv  = randAlloc(nFields * cubatureOffset * nEXT);
+  void *conv  = randAlloc(nFields * cubatureOffset * maxEXT);
   void *cubInterpT  = randAlloc(Nq * cubNq);
   void *Ud  = randAlloc(nFields * fieldOffset);
 
@@ -277,7 +277,7 @@ int main(int argc, char** argv)
   free(cubD);
   o_NU = platform->device.malloc(nFields * fieldOffset * wordSize, NU);
   free(NU);
-  o_conv = platform->device.malloc(nFields * cubatureOffset * nEXT * wordSize, conv);
+  o_conv = platform->device.malloc(nFields * cubatureOffset * maxEXT * wordSize, conv);
   free(conv);
   o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT);
   free(cubInterpT);
@@ -291,69 +291,72 @@ int main(int argc, char** argv)
   // currently lacking a native implementation of the non-dealiased kernel
   if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
 
-  int Nkernels = 12;
-  for(int knl=0;knl<Nkernels;++knl){
-    occa::properties newprops = props;
-    newprops["defines/p_knl"] = knl;
+  //  int Nkernels = 5;
+  //  int kernelIds[5] = {0,6,7,9,15};
+  const int Nkernels = 5;
+  int kernelIds[100] = {0,7,9,16,17,7,9,15,16,17};
+  for(int nEXT=2;nEXT<maxEXT;++nEXT){
+    for(int kid=0;kid<Nkernels;++kid){
+      int knl = kernelIds[kid];
+      occa::properties newprops = props;
+      newprops["defines/p_knl"] = knl;
+      newprops["defines/p_nEXT"] = nEXT;
     
-    subcyclingKernel = platform->device.buildKernel(fileName, newprops, true);
+      subcyclingKernel = platform->device.buildKernel(fileName, newprops, true);
     
+      // warm-up
+      double elapsed = run(10);    
+      const int elapsedTarget = 10;
+      if(Ntests < 0) Ntests = elapsedTarget/elapsed;
     
-    // warm-up
-    double elapsed = run(100);    
-    const int elapsedTarget = 10;
-    if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+      // ***** 
+      elapsed = run(Ntests);
+      // ***** 
     
-    // ***** 
-    elapsed = run(Ntests);
-    // ***** 
+      // print statistics
+      const dfloat GDOFPerSecond = nFields * (size * Nelements * (N * N * N) / elapsed) / 1.e9;
     
-    // print statistics
-    const dfloat GDOFPerSecond = nFields * (size * Nelements * (N * N * N) / elapsed) / 1.e9;
+      size_t bytesPerElem = 2 * nFields * Np; // Ud, NU
+      bytesPerElem += Np; // inv mass matrix
+      bytesPerElem += nFields * cubNp * nEXT; // U(r,s,t)
     
-    size_t bytesPerElem = 2 * nFields * Np; // Ud, NU
-    bytesPerElem += Np; // inv mass matrix
-    bytesPerElem += nFields * cubNp * nEXT; // U(r,s,t)
+      size_t otherBytes = cubNq * cubNq; // D
+      if(cubNq > Nq){
+	otherBytes += Nq * cubNq; // interpolator
+      }
+      otherBytes   *= wordSize;
+      bytesPerElem *= wordSize;
+      const double bw = (size * (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
     
-    size_t otherBytes = cubNq * cubNq; // D
-    if(cubNq > Nq){
-      otherBytes += Nq * cubNq; // interpolator
+      double flopCount = 0.0; // per elem basis
+      if(cubNq > Nq){
+	flopCount += 6. * cubNp * nEXT; // extrapolate U(r,s,t) to current time
+	flopCount += 18. * cubNp * cubNq; // apply Dcub
+	flopCount += 9. * Np; // compute NU
+	flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+      } else {
+	flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
+      }
+      const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
+    
+      // get an l1 norm of NU
+      double csum = test(nFields);
+    
+      if(rank == 0)
+	std::cout << " N=" << N
+		  << " cubN=" << cubN
+		  << " Nelements=" << size * Nelements
+		  << " nEXT=" << nEXT
+		  << " elapsed time=" << elapsed
+		  << " wordSize=" << 8*wordSize
+		  << " GDOF/s=" << GDOFPerSecond
+		  << " GB/s=" << bw
+		  << " GFLOPS/s=" << gflops
+		  << " checksum=" << csum
+		  << " kernel=" << knl
+		  << "\n";
     }
-    otherBytes   *= wordSize;
-    bytesPerElem *= wordSize;
-    const double bw = (size * (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
-    
-    double flopCount = 0.0; // per elem basis
-    if(cubNq > Nq){
-      flopCount += 6. * cubNp * nEXT; // extrapolate U(r,s,t) to current time
-      flopCount += 18. * cubNp * cubNq; // apply Dcub
-      flopCount += 9. * Np; // compute NU
-      flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
-    } else {
-    flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
-    }
-    const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
-    
-    // get an l1 norm of NU
-    double csum = test(nFields);
-    
-    if(rank == 0)
-      std::cout << "MPItasks=" << size
-		<< " OMPthreads=" << Nthreads
-		<< " NRepetitions=" << Ntests
-		<< " N=" << N
-		<< " cubN=" << cubN
-		<< " Nelements=" << size * Nelements
-		<< " elapsed time=" << elapsed
-		<< " wordSize=" << 8*wordSize
-		<< " GDOF/s=" << GDOFPerSecond
-		<< " GB/s=" << bw
-		<< " GFLOPS/s=" << gflops
-		<< " checksum=" << csum
-		<< " kernel=" << knl
-		<< "\n";
-  }
-  
+  }  
   MPI_Finalize();
   exit(0);
 }
